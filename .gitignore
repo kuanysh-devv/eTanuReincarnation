@@ -1,0 +1,7 @@
+.venv
+metadata/data
+metadata/data/bugs
+metadata/data/images
+metadata/data/test
+.env
+metadata/insightface/models
