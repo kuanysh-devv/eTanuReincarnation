@@ -29,7 +29,7 @@ rec_model.prepare(ctx_id=0)
 def search_faces_in_milvus(embedding, limit):
     # Search for the closest embeddings in the Milvus collection
     collection = Collection("face_embeddings")
-
+    collection.load()
     search_params = {"metric_type": "L2", "params": {"nprobe": 32}}
 
     results = collection.search(
