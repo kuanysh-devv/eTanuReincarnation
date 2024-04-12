@@ -33,12 +33,10 @@ MILVUS_PORT = os.environ.get('MILVUS_PORT')
 client = Milvus(MILVUS_HOST, MILVUS_PORT)
 resnet = InceptionResnetV1(pretrained='vggface2').eval()
 rec_model_path = 'C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/metadata/insightface/models/w600k_mbf.onnx'
-det_model_path = 'C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/metadata/insightface/models/det_500m.onnx'
 detector = MTCNN(steps_threshold=[0.7, 0.8, 0.9], min_face_size=40)
 rec_model = model_zoo.get_model(rec_model_path)
 det_model = model_zoo.get_model(det_model_path)
 rec_model.prepare(ctx_id=0)
-det_model.prepare(ctx_id=0, input_size=(640, 640), det_thres=0.5)
 
 
 def image_to_base64(image_path):
