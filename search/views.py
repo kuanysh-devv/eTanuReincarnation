@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import cv2
+from django.apps import apps
 from mtcnn import MTCNN
 import psycopg2
 from facenet_pytorch import InceptionResnetV1
@@ -21,15 +22,16 @@ connections.connect(
     host='localhost',
     port='19530'
 )
-rec_model_path = 'C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/metadata/insightface/models/w600k_mbf.onnx'
-rec_model = model_zoo.get_model(rec_model_path)
+rec_model_path = '/root/eTanuReincarnation/metadata/insightface/models/w600k_mbf.onnx'
+rec_model_path_windows = ('C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/metadata/insightface/models/w600k_mbf'
+                          '.onnx')
+rec_model = model_zoo.get_model(rec_model_path_windows)
 rec_model.prepare(ctx_id=0)
+collection = Collection('face_embeddings')
+collection.load()
 
 
 def search_faces_in_milvus(embedding, limit):
-    # Search for the closest embeddings in the Milvus collection
-    collection = Collection("face_embeddings")
-    collection.load()
     search_params = {"metric_type": "L2", "params": {"nprobe": 32}}
 
     results = collection.search(
@@ -85,10 +87,10 @@ def process_image(request):
             face = Face(bbox=bbox, kps=kps, det_score=det_score)
 
             embedding = convert_image_to_embeddingv2(img_rgb, face)
-
+            print("Starting here")
             # Search for the face in Milvus
             vector_ids, distances = search_faces_in_milvus(embedding, limit)
-
+            print("Done")
             # Retrieve metadata for each vector ID
             metadata_objects = Metadata.objects.filter(vector_id__in=vector_ids)
 
@@ -96,7 +98,7 @@ def process_image(request):
 
             milvus_results = [{'vector_id': vector_id, 'distance': round(dist, 2)} for vector_id, dist in
                               zip(vector_ids, distances)]
-            metadata_list = [{'vector_id': obj.vector_id, 'name': obj.firstname, 'surname': obj.surname,
+            metadata_list = [{'vector_id': obj.vector_id, 'iin': obj.iin, 'name': obj.firstname, 'surname': obj.surname,
                               'patronymic': obj.patronymic, 'photo': obj.photo} for obj in metadata_objects]
 
             # Associate metadata with Milvus results based on vector ID

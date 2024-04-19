@@ -31,10 +31,11 @@ load_dotenv()
 MILVUS_HOST = os.environ.get('MILVUS_HOST')
 MILVUS_PORT = os.environ.get('MILVUS_PORT')
 client = Milvus(MILVUS_HOST, MILVUS_PORT)
-resnet = InceptionResnetV1(pretrained='vggface2').eval()
-rec_model_path = 'C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/metadata/insightface/models/w600k_mbf.onnx'
+rec_model_path = '/root/eTanuReincarnation/metadata/insightface/models/w600k_mbf.onnx'
+rec_model_path_windows = ('C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/metadata/insightface/models/w600k_mbf'
+                          '.onnx')
 detector = MTCNN(steps_threshold=[0.7, 0.8, 0.9], min_face_size=40)
-rec_model = model_zoo.get_model(rec_model_path)
+rec_model = model_zoo.get_model(rec_model_path_windows)
 rec_model.prepare(ctx_id=0)
 
 
@@ -81,7 +82,6 @@ def alignment_procedure(img, face):
 
 
 def convert_image_to_embedding(img, face):
-
     # Detect faces in the image
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     face_image = alignment_procedure(img_rgb, face)
@@ -126,23 +126,21 @@ def process_image(image_path, collection_name):
 
     # Generate UUID for the embedding
     embedding_id = str(uuid.uuid4())
-    full_name = metadata['info']['FIO']
-
-    name_components = full_name.split()
     first_name = None
     surname = None
     patronymic = None
-    # Check if all three components are present
-    if len(name_components) == 3:
-        surname, first_name, patronymic = name_components
-    elif len(name_components) == 2:
-        surname, first_name = name_components
-        patronymic = ""  # If patronymic is missing, assign an empty string
-    else:
-        print("Invalid full name format")
+    if metadata['info']['FIO'] is not None:
+        full_name = metadata['info']['FIO']
+        name_components = full_name.split()
+        if len(name_components) == 3:
+            surname, first_name, patronymic = name_components
+        elif len(name_components) == 2:
+            surname, first_name = name_components
+            patronymic = ""
 
     Metadata.objects.create(
         vector_id=embedding_id,
+        iin=metadata['info']['IIN'].replace('"',''),
         firstname=first_name,
         surname=surname,
         patronymic=patronymic,

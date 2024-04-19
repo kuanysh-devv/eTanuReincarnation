@@ -7,11 +7,11 @@ from .tasks import process_image
 import cv2
 import torch
 import os
+import pandas as pd
 import uuid
 import sys
 import numpy as np
 from dotenv import load_dotenv
-
 import torchvision.transforms as transforms
 import torchvision.models as models
 from torchvision.models import ResNet50_Weights
@@ -85,21 +85,10 @@ def import_embeddings(image_directory, collection_name):
 
     start = 1
     # Import embeddings into Milvus
-
-    for index, file_name in enumerate(os.listdir(image_directory), start=start):
-        if file_name.endswith(".png") or file_name.endswith(".jpg"):
-            image_path = os.path.join(image_directory, file_name)
-            process_image.delay(image_path, collection_name)
-
-    client.flush([collection_name])
-    stats = client.get_collection_stats(collection_name)
-    print(stats)
-
-    # Create index
     index_params = {
         "metric_type": "L2",
         "index_type": "IVF_FLAT",
-        "params": {"nlist": 4096}
+        "params": {"nlist": 1024}
     }
     if collection:
         collection.create_index(
@@ -108,6 +97,11 @@ def import_embeddings(image_directory, collection_name):
         )
 
         utility.index_building_progress(collection_name)
+
+    for index, file_name in enumerate(os.listdir(image_directory), start=start):
+        if file_name.endswith(".png") or file_name.endswith(".jpg"):
+            image_path = os.path.join(image_directory, file_name)
+            process_image.delay(image_path, collection_name)
 
 
 class MetadataViewSet(viewsets.ModelViewSet):
@@ -118,9 +112,9 @@ class MetadataViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def commit(self, request, *args, **kwargs):
         start_time = time.time()
-        image_directory = "C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/metadata/data/images"
+        image_directory = "/root/eTanuReincarnation/metadata/data/test02"
 
-        collection_name = 'face_embeddings'
+        collection_name = 'face_embeddings02'
 
         import_embeddings(image_directory, collection_name)
 
