@@ -135,7 +135,7 @@ TIME_ZONE = 'Asia/Almaty'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 REST_FRAMEWORK = {
@@ -147,7 +147,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny'
+        'rest_framework.permissions.IsAuthenticated',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -228,7 +228,7 @@ CACHES = {
 
 CELERY_BROKER_URL = "redis://localhost:6379"
 CELERY_RESULT_BACKEND = "redis://localhost:6379"
-CELERY_TIMEZONE = 'Asia/Almaty'
+CELERY_TIMEZONE = 'Asia/Qyzylorda'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'

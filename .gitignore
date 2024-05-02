@@ -5,3 +5,5 @@ metadata/data/images
 metadata/data/test
 .env
 metadata/insightface/models
+output.csv
+script.py
