@@ -8,6 +8,9 @@ from pymilvus import Milvus, DataType, Collection, connections
 import numpy as np
 from rest_framework.decorators import authentication_classes, permission_classes
 import pytz
+from minio import Minio
+from io import BytesIO
+from uuid import uuid4
 import torch
 from rest_framework.permissions import IsAuthenticated
 import base64
@@ -36,8 +39,14 @@ rec_model_path_windows = ('C:/Users/User4/PycharmProjects/eTanuReincarnationAPI/
                           '.onnx')
 rec_model = model_zoo.get_model(rec_model_path_windows)
 rec_model.prepare(ctx_id=0)
-#collection = Collection('face_embeddings')
-#collection.load()
+collection = Collection('face_embeddings')
+collection.load()
+minio_client = Minio(
+    endpoint='127.0.0.1:9000',
+    access_key='minioadmin',
+    secret_key='minioadmin',
+    secure=False  # Set to True if using HTTPS
+)
 
 
 def search_faces_in_milvus(embedding, limit):
@@ -65,13 +74,14 @@ def convert_image_to_embeddingv2(img, face):
 
 def upload_image_to_minio(image_data, bucket_name, content_type):
     try:
+        print("hello")
         # Create BytesIO object from image data
         image_stream = BytesIO(image_data)
 
         # Generate unique object name using uuid4()
         object_name = str(uuid4()) + content_type.replace('image/',
                                                           '.')  # Example: '7f1d18a4-2c0e-47d3-afe1-6d27c3b9392e.png'
-
+        print(object_name)
         # Upload image to MinIO
         minio_client.put_object(
             bucket_name,
@@ -83,7 +93,6 @@ def upload_image_to_minio(image_data, bucket_name, content_type):
         return object_name
     except Exception as err:
         print(f"MinIO Error: {err}")
-
 
 
 @csrf_exempt
@@ -134,7 +143,7 @@ def process_image(request):
             milvus_results = [{'vector_id': vector_id, 'distance': round(dist, 2)} for vector_id, dist in
                               zip(vector_ids, distances)]
             metadata_list = [{'vector_id': obj.vector_id, 'iin': obj.iin, 'name': obj.firstname, 'surname': obj.surname,
-                              'patronymic': obj.patronymic, 'photo': obj.photo} for obj in metadata_objects]
+                              'patronymic': obj.patronymic, 'birth_date': obj.birthdate, 'photo': obj.photo} for obj in metadata_objects]
 
             # Associate metadata with Milvus results based on vector ID
             for milvus_result in milvus_results:

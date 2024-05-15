@@ -15,7 +15,11 @@ from django.views.decorators.csrf import csrf_exempt
 import uuid
 from rest_framework_simplejwt.views import TokenObtainPairView
 import io
+from django.shortcuts import get_object_or_404
 import sys
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import viewsets, status, pagination
 import numpy as np
 from dotenv import load_dotenv
 import torchvision.transforms as transforms
@@ -231,6 +235,10 @@ def register(request):
     return JsonResponse({'status': 'Упс что-то пошло не так...'})
 
 
+class HistoryPagination(pagination.PageNumberPagination):
+    page_size = 10  # Set the page size to 10
+
+
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
@@ -257,3 +265,28 @@ class AccountViewSet(viewsets.ModelViewSet):
             }
 
         return JsonResponse(user_data)
+
+    @action(detail=False, methods=['get'], url_path='history/(?P<auth_user_id>[^/.]+)')
+    def get_history(self, request, auth_user_id=None):
+        try:
+            if not auth_user_id:
+                return JsonResponse({"error": "auth_user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            user = get_object_or_404(User, id=auth_user_id)
+            account = get_object_or_404(Account, user=user)
+            history_list = SearchHistory.objects.filter(account=account).order_by('-created_at')
+
+            paginator = HistoryPagination()
+            paginated_history = paginator.paginate_queryset(history_list, request)
+
+            history_data = []
+            for history in paginated_history:
+                history_data.append({
+                    "searchedPhoto": history.searchedPhoto,
+                    "created_at": history.created_at,
+                })
+
+            return paginator.get_paginated_response(history_data)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
