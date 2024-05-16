@@ -3,14 +3,17 @@ import cv2
 from django.apps import apps
 from mtcnn import MTCNN
 import psycopg2
+from rest_framework.views import APIView
+from rest_framework import viewsets
 from facenet_pytorch import InceptionResnetV1
 from pymilvus import Milvus, DataType, Collection, connections
 import numpy as np
-from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.decorators import authentication_classes, permission_classes, action
 import pytz
 from minio import Minio
 from io import BytesIO
 from uuid import uuid4
+from rest_framework.parsers import MultiPartParser, FormParser
 import torch
 from rest_framework.permissions import IsAuthenticated
 import base64
@@ -95,12 +98,12 @@ def upload_image_to_minio(image_data, bucket_name, content_type):
         print(f"MinIO Error: {err}")
 
 
-@csrf_exempt
-@permission_classes([IsAuthenticated])
-@authentication_classes([JWTAuthentication])
-def process_image(request):
-    if request.method == 'POST' and request.FILES.get('image'):
+class SearchView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
+    @action(detail=False, methods=['post'])
+    def post(self, request):
         # Get the uploaded image file and the limit parameter from the request
         image_file = request.FILES['image']
         limit = int(request.POST.get('limit', 5))  # Default limit is 10 if not provided
@@ -142,8 +145,10 @@ def process_image(request):
 
             milvus_results = [{'vector_id': vector_id, 'distance': round(dist, 2)} for vector_id, dist in
                               zip(vector_ids, distances)]
-            metadata_list = [{'vector_id': obj.vector_id, 'iin': obj.iin, 'name': obj.firstname, 'surname': obj.surname,
-                              'patronymic': obj.patronymic, 'birth_date': obj.birthdate, 'photo': obj.photo} for obj in metadata_objects]
+            metadata_list = [
+                {'vector_id': obj.vector_id, 'iin': obj.iin, 'name': obj.firstname, 'surname': obj.surname,
+                 'patronymic': obj.patronymic, 'birth_date': obj.birthdate, 'photo': obj.photo} for obj in
+                metadata_objects]
 
             # Associate metadata with Milvus results based on vector ID
             for milvus_result in milvus_results:
@@ -177,5 +182,3 @@ def process_image(request):
         )
 
         return JsonResponse({'faces': face_results})
-
-    return JsonResponse({'error': 'Invalid request method or missing image file'}, status=400)
