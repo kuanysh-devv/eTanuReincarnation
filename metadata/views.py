@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 import uuid
 from rest_framework_simplejwt.views import TokenObtainPairView
 import io
+from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
 import sys
 from rest_framework.decorators import action
@@ -266,6 +267,7 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         return JsonResponse(user_data)
 
+    @method_decorator(csrf_exempt, name='dispatch')
     @action(detail=False, methods=['get'], url_path='history/(?P<auth_user_id>[^/.]+)')
     def get_history(self, request, auth_user_id=None):
         try:
