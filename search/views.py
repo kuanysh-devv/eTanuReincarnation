@@ -11,6 +11,7 @@ import numpy as np
 from rest_framework.decorators import authentication_classes, permission_classes, action
 import pytz
 from minio import Minio
+import requests
 from io import BytesIO
 from uuid import uuid4
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -105,11 +106,23 @@ class SearchView(APIView):
     @action(detail=False, methods=['post'])
     def post(self, request):
         # Get the uploaded image file and the limit parameter from the request
-        image_file = request.FILES['image']
+
         limit = int(request.POST.get('limit', 5))  # Default limit is 10 if not provided
         user_id = request.POST.get('auth_user_id')
+        reload = request.POST.get('reload')
+
+        if reload == "1":
+            image_name = request.POST.get('image_name')
+            bucket_name = 'history'
+            image_url = f'http://127.0.0.1:9000/{bucket_name}/{image_name}'
+            response = requests.get(image_url)
+            image_data = response.content
+            print(image_data)
         # Read the image file and convert it to an OpenCV format
-        image_data = image_file.read()
+        else:
+            image_file = request.FILES['image']
+            image_data = image_file.read()
+
         nparr = np.frombuffer(image_data, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
@@ -168,8 +181,6 @@ class SearchView(APIView):
             face_results.append(face_result)
 
         bucket_name = 'history'
-        with image_file.open('rb') as f:
-            image_data = f.read()
 
         uploaded_object_name = upload_image_to_minio(image_data, bucket_name, content_type='image/png')
         user = User.objects.get(id=user_id)
