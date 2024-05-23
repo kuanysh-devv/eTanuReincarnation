@@ -23,8 +23,8 @@ from uuid import uuid4
 import insightface
 from insightface.app.common import Face
 from insightface.model_zoo import model_zoo
-from .models import Metadata
-from .serializers import MetadataSerializer
+from .models import Person, Gallery
+from .serializers import PersonSerializer
 from dotenv import load_dotenv
 import keras.applications
 from minio import Minio
@@ -185,13 +185,11 @@ def process_image(image_path, collection_name):
 
     uploaded_object_name = upload_image_to_minio(image_data, bucket_name, content_type='image/png')
 
-    Metadata.objects.create(
-        vector_id=embedding_id,
+    Person.objects.create(
         iin=None,
         firstname=first_name,
         surname=surname,
         patronymic=patronymic,
-        photo=uploaded_object_name
     )
 
     data = [
@@ -249,15 +247,28 @@ def process_image_from_row(row_data, collection_name):
 
     uploaded_object_name = upload_image_to_minio(image_data, bucket_name, content_type='image/png')
 
-    Metadata.objects.create(
-        vector_id=embedding_id,
-        iin=iin,
-        firstname=first_name,
-        surname=surname,
-        patronymic=patronymic,
-        birthdate=reformatted_birthdate,
-        photo=uploaded_object_name
-    )
+    if Person.objects.filter(iin=iin).exists():
+        existedPerson = Person.objects.get(iin=iin)
+
+        Gallery.objects.create(
+            vector_id=embedding_id,
+            photo=uploaded_object_name,
+            personId=existedPerson
+        )
+    else:
+        person_instance = Person.objects.create(
+            iin=iin,
+            firstname=first_name,
+            surname=surname,
+            patronymic=patronymic,
+            birthdate=reformatted_birthdate,
+        )
+
+        Gallery.objects.create(
+            vector_id=embedding_id,
+            photo=uploaded_object_name,
+            personId=person_instance
+        )
 
     data = [
         [embedding_id],

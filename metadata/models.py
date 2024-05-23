@@ -4,21 +4,32 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import User
 
 
-class Metadata(models.Model):
-    vector_id = models.CharField(max_length=50, primary_key=True, verbose_name=_("Vector Id"))
+class Person(models.Model):
     iin = models.CharField(max_length=255, verbose_name=_("iin"), default="", null=True, blank=True)
     firstname = models.CharField(max_length=255, verbose_name=_("firstName"), default="", null=True, blank=True)
     surname = models.CharField(max_length=255, verbose_name=_("surname"), default="", null=True, blank=True)
     patronymic = models.CharField(max_length=255, verbose_name=_("patronymic"), default="", null=True, blank=True)
     birthdate = models.DateField(verbose_name=_("birthdate"), null=True, blank=True)
-    photo = models.TextField(verbose_name=_("Photo"))
 
     def __str__(self):
         return str(self.surname) + " " + str(self.firstname) + " " + str(self.patronymic)
 
     class Meta:
-        verbose_name = _("Metadata")
-        verbose_name_plural = _("Metadata instances")
+        verbose_name = _("Person")
+        verbose_name_plural = _("Person instances")
+
+
+class Gallery(models.Model):
+    vector_id = models.CharField(max_length=50, primary_key=True, verbose_name=_("Vector Id"))
+    photo = models.TextField(verbose_name=_("Photo"))
+    personId = models.ForeignKey(Person, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.personId.surname) + " " + str(self.personId.firstname) + " " + str(self.personId.patronymic) + str(self.photo)
+
+    class Meta:
+        verbose_name = _("Gallery")
+        verbose_name_plural = _("Gallery instances")
 
 
 class Account(models.Model):

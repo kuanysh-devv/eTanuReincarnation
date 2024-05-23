@@ -29,8 +29,8 @@ from torchvision.models import ResNet50_Weights
 from PIL import Image
 from pymilvus import Milvus, CollectionSchema, FieldSchema, DataType, Collection, connections, utility
 import base64
-from .models import Metadata, Account, SearchHistory
-from .serializers import MetadataSerializer, AccountSerializer, CustomTokenObtainPairSerializer
+from .models import Person, Account, SearchHistory, Gallery
+from .serializers import PersonSerializer, AccountSerializer, CustomTokenObtainPairSerializer
 
 load_dotenv()
 
@@ -179,9 +179,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-class MetadataViewSet(viewsets.ModelViewSet):
-    queryset = Metadata.objects.all()
-    serializer_class = MetadataSerializer
+class PersonViewSet(viewsets.ModelViewSet):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
     permission_classes = (IsAuthenticated,)
 
     @action(detail=False, methods=['get'])

@@ -30,7 +30,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import math
 from PIL import Image
-from metadata.models import Metadata, SearchHistory, Account
+from metadata.models import Person, SearchHistory, Account, Gallery
 
 detector = MTCNN(steps_threshold=[0.7, 0.8, 0.9], min_face_size=40)
 milvus = Milvus(host='localhost', port='19530')
@@ -146,16 +146,15 @@ class SearchView(APIView):
             # Search for the face in Milvus
             vector_ids, distances = search_faces_in_milvus(embedding, limit)
             # Retrieve metadata for each vector ID
-            metadata_objects = Metadata.objects.filter(vector_id__in=vector_ids)
-
+            gallery_objects = Gallery.objects.filter(vector_id__in=vector_ids)
             # Prepare data for response
 
             milvus_results = [{'vector_id': vector_id, 'distance': round(dist, 2)} for vector_id, dist in
                               zip(vector_ids, distances)]
             metadata_list = [
-                {'vector_id': obj.vector_id, 'iin': obj.iin, 'name': obj.firstname, 'surname': obj.surname,
-                 'patronymic': obj.patronymic, 'birth_date': obj.birthdate, 'photo': obj.photo} for obj in
-                metadata_objects]
+                {'vector_id': obj.vector_id, 'iin': obj.personId.iin, 'name': obj.personId.firstname, 'surname': obj.personId.surname,
+                 'patronymic': obj.personId.patronymic, 'birth_date': obj.personId.birthdate, 'photo': obj.photo} for obj in
+                gallery_objects]
 
             # Associate metadata with Milvus results based on vector ID
             for milvus_result in milvus_results:
